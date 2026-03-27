@@ -1,0 +1,14 @@
+services:
+  app:
+    image: ghcr.io/rullzer/lijstje:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"  # localhost only — reverse proxy handles public traffic
+    environment:
+      PORT: "3000"
+      DATA_DIR: /data
+    volumes:
+      - app-data:/data
+
+volumes:
+  app-data:

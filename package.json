@@ -13,12 +13,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
-    "better-sqlite3": "^11.9.1",
     "hono": "^4.7.5",
     "morphdom": "^2.7.4"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.13.14",
     "esbuild": "^0.25.2",
     "tsx": "^4.19.3",

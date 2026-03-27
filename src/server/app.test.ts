@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { createDatabase } from './db/client.js'
+import { createStore } from './store/store.js'
 import { createApp } from './app.js'
 
 type App = ReturnType<typeof createApp>
@@ -27,7 +27,7 @@ describe('POST /api/lists', () => {
   let app: App
 
   beforeEach(() => {
-    app = createApp(createDatabase(':memory:'))
+    app = createApp(createStore(), () => {})
   })
 
   it('creates a list and returns 201 with the list', async () => {
@@ -67,7 +67,7 @@ describe('GET /api/lists/:id', () => {
   let app: App
 
   beforeEach(() => {
-    app = createApp(createDatabase(':memory:'))
+    app = createApp(createStore(), () => {})
   })
 
   it('returns the list with an empty items array', async () => {
@@ -98,7 +98,7 @@ describe('POST /api/lists/:id/items', () => {
   let app: App
 
   beforeEach(() => {
-    app = createApp(createDatabase(':memory:'))
+    app = createApp(createStore(), () => {})
   })
 
   it('adds an item and returns 201', async () => {
@@ -138,7 +138,7 @@ describe('PATCH /api/lists/:id/items/:itemId', () => {
   let app: App
 
   beforeEach(() => {
-    app = createApp(createDatabase(':memory:'))
+    app = createApp(createStore(), () => {})
   })
 
   it('toggles checked to true', async () => {
@@ -200,7 +200,7 @@ describe('DELETE /api/lists/:id/items/:itemId', () => {
   let app: App
 
   beforeEach(() => {
-    app = createApp(createDatabase(':memory:'))
+    app = createApp(createStore(), () => {})
   })
 
   it('deletes an item and returns 204', async () => {

@@ -3,13 +3,11 @@ import { streamSSE } from 'hono/streaming'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { Db } from './db/client.js'
-import { createList, getList } from './db/lists.js'
-import { createItem, getItems, updateItem, deleteItem } from './db/items.js'
+import type { Store } from './store/store.js'
 import { validateName, validateText, validatePatch } from './lib/validation.js'
 import { subscribe, broadcast } from './lib/broadcaster.js'
 
-export function createApp(db: Db) {
+export function createApp(store: Store, persist: (listId: string) => void) {
   const app = new Hono()
 
   // --- Static client files ---
@@ -33,67 +31,72 @@ export function createApp(db: Db) {
     const result = validateName(body?.name)
     if (!result.ok) return c.json({ error: result.error }, 400)
 
-    const list = createList(db, {
+    const list = store.createList({
       id: crypto.randomUUID(),
       name: result.value,
       createdAt: new Date().toISOString(),
     })
+    persist(list.id)
     return c.json(list, 201)
   })
 
   app.get('/api/lists/:id', (c) => {
-    const list = getList(db, c.req.param('id'))
+    const list = store.getList(c.req.param('id'))
     if (!list) return c.json({ error: 'list not found' }, 404)
-    return c.json({ ...list, items: getItems(db, list.id) })
+    return c.json({ ...list, items: store.getItems(list.id) })
   })
 
   app.post('/api/lists/:id/items', async (c) => {
     const listId = c.req.param('id')
-    if (!getList(db, listId)) return c.json({ error: 'list not found' }, 404)
+    if (!store.listExists(listId)) return c.json({ error: 'list not found' }, 404)
 
     const body = await c.req.json()
     const result = validateText(body?.text)
     if (!result.ok) return c.json({ error: result.error }, 400)
 
     const now = new Date().toISOString()
-    const item = createItem(db, {
+    const item = store.createItem({
       id: crypto.randomUUID(),
       listId,
       text: result.value,
+      checked: false,
       createdAt: now,
       updatedAt: now,
     })
 
-    broadcast(listId, getItems(db, listId))
+    persist(listId)
+    broadcast(listId, store.getItems(listId))
     return c.json(item, 201)
   })
 
   app.patch('/api/lists/:id/items/:itemId', async (c) => {
     const listId = c.req.param('id')
-    if (!getList(db, listId)) return c.json({ error: 'list not found' }, 404)
+    if (!store.listExists(listId)) return c.json({ error: 'list not found' }, 404)
 
     const body = await c.req.json()
     const result = validatePatch(body)
     if (!result.ok) return c.json({ error: result.error }, 400)
 
-    const item = updateItem(db, c.req.param('itemId'), {
+    const item = store.updateItem(listId, c.req.param('itemId'), {
       ...result.value,
       updatedAt: new Date().toISOString(),
     })
     if (!item) return c.json({ error: 'item not found' }, 404)
 
-    broadcast(listId, getItems(db, listId))
+    persist(listId)
+    broadcast(listId, store.getItems(listId))
     return c.json(item)
   })
 
   app.delete('/api/lists/:id/items/:itemId', (c) => {
     const listId = c.req.param('id')
-    if (!getList(db, listId)) return c.json({ error: 'list not found' }, 404)
+    if (!store.listExists(listId)) return c.json({ error: 'list not found' }, 404)
 
-    const deleted = deleteItem(db, c.req.param('itemId'))
+    const deleted = store.deleteItem(listId, c.req.param('itemId'))
     if (!deleted) return c.json({ error: 'item not found' }, 404)
 
-    broadcast(listId, getItems(db, listId))
+    persist(listId)
+    broadcast(listId, store.getItems(listId))
     return new Response(null, { status: 204 })
   })
 
@@ -101,16 +104,15 @@ export function createApp(db: Db) {
 
   app.get('/api/lists/:id/stream', (c) => {
     const listId = c.req.param('id')
-    if (!getList(db, listId)) return c.json({ error: 'list not found' }, 404)
+    if (!store.listExists(listId)) return c.json({ error: 'list not found' }, 404)
 
     return streamSSE(c, async (stream) => {
       let closed = false
       stream.onAbort(() => { closed = true })
 
-      // Send current state immediately on connect
       await stream.writeSSE({
         event: 'items',
-        data: JSON.stringify({ items: getItems(db, listId) }),
+        data: JSON.stringify({ items: store.getItems(listId) }),
       })
 
       const unsubscribe = subscribe(listId, (items) => {
@@ -121,7 +123,6 @@ export function createApp(db: Db) {
         }
       })
 
-      // Keepalive ping every 30s to prevent proxy timeouts
       while (!closed) {
         await stream.sleep(30_000)
         if (!closed) {
