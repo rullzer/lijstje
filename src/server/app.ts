@@ -7,7 +7,7 @@ import type { Store } from './store/store.js'
 import { validateName, validateText, validatePatch } from './lib/validation.js'
 import { subscribe, broadcast } from './lib/broadcaster.js'
 
-export function createApp(store: Store, persist: (listId: string) => void) {
+export function createApp(store: Store, persist: (listId: string) => void, createSecret?: string) {
   const app = new Hono()
 
   // --- Static client files ---
@@ -27,6 +27,10 @@ export function createApp(store: Store, persist: (listId: string) => void) {
   // --- API ---
 
   app.post('/api/lists', async (c) => {
+    if (createSecret && c.req.header('X-Create-Secret') !== createSecret) {
+      return c.json({ error: 'invalid or missing secret' }, 401)
+    }
+
     const body = await c.req.json()
     const result = validateName(body?.name)
     if (!result.ok) return c.json({ error: result.error }, 400)

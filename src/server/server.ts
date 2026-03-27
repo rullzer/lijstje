@@ -8,7 +8,7 @@ const dataDir = process.env.DATA_DIR ?? '.'
 const initial = await loadAll(dataDir)
 const store = createStore(initial)
 const persist = createPersister(dataDir, store)
-const app = createApp(store, persist)
+const app = createApp(store, persist, process.env.CREATE_SECRET)
 
 const port = Number(process.env.PORT ?? 3000)
 

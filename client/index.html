@@ -11,21 +11,30 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-2">Lijstje</h1>
       <p class="text-gray-400 mb-10">Create a shopping list and share it with anyone.</p>
 
-      <form id="create-form" class="flex gap-2">
+      <form id="create-form" class="flex flex-col gap-3">
         <input
           id="list-name"
           type="text"
           placeholder="List name…"
-          class="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-base outline-none focus:border-emerald-400 bg-white shadow-sm"
+          class="rounded-lg border border-gray-200 px-4 py-3 text-base outline-none focus:border-emerald-400 bg-white shadow-sm"
           autocomplete="off"
           required
         />
-        <button
-          type="submit"
-          class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium px-5 py-3 rounded-lg shadow-sm transition-colors disabled:opacity-50"
-        >
-          Create
-        </button>
+        <div class="flex gap-2">
+          <input
+            id="create-secret"
+            type="password"
+            placeholder="Secret…"
+            class="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-base outline-none focus:border-emerald-400 bg-white shadow-sm"
+            autocomplete="current-password"
+          />
+          <button
+            type="submit"
+            class="bg-emerald-500 hover:bg-emerald-600 text-white font-medium px-5 py-3 rounded-lg shadow-sm transition-colors disabled:opacity-50"
+          >
+            Create
+          </button>
+        </div>
       </form>
 
       <p id="error" class="mt-3 text-sm text-red-500"></p>

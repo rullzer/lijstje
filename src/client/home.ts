@@ -1,5 +1,6 @@
 const form = document.getElementById('create-form') as HTMLFormElement
 const input = document.getElementById('list-name') as HTMLInputElement
+const secretInput = document.getElementById('create-secret') as HTMLInputElement
 const error = document.getElementById('error') as HTMLParagraphElement
 
 form.addEventListener('submit', async (e) => {
@@ -14,7 +15,10 @@ form.addEventListener('submit', async (e) => {
   try {
     const res = await fetch('/api/lists', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Create-Secret': secretInput.value,
+      },
       body: JSON.stringify({ name }),
     })
     const body = await res.json()

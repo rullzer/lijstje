@@ -5,10 +5,13 @@ import { createApp } from './app.js'
 type App = ReturnType<typeof createApp>
 
 // Helpers to reduce boilerplate in tests
-async function createList(app: App, name = 'Shopping') {
+async function createList(app: App, name = 'Shopping', secret?: string) {
   const res = await app.request('/api/lists', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(secret ? { 'X-Create-Secret': secret } : {}),
+    },
     body: JSON.stringify({ name }),
   })
   return res.json()
@@ -23,7 +26,7 @@ async function addItem(app: App, listId: string, text = 'Milk') {
   return res.json()
 }
 
-describe('POST /api/lists', () => {
+describe('POST /api/lists — no secret configured', () => {
   let app: App
 
   beforeEach(() => {
@@ -60,6 +63,47 @@ describe('POST /api/lists', () => {
       body: JSON.stringify({}),
     })
     expect(res.status).toBe(400)
+  })
+})
+
+describe('POST /api/lists — secret configured', () => {
+  let app: App
+
+  beforeEach(() => {
+    app = createApp(createStore(), () => {}, 'correct-secret')
+  })
+
+  it('creates a list with the correct secret', async () => {
+    const res = await app.request('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Create-Secret': 'correct-secret' },
+      body: JSON.stringify({ name: 'Shopping' }),
+    })
+    expect(res.status).toBe(201)
+  })
+
+  it('returns 401 with wrong secret', async () => {
+    const res = await app.request('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Create-Secret': 'wrong' },
+      body: JSON.stringify({ name: 'Shopping' }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('returns 401 with missing secret', async () => {
+    const res = await app.request('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Shopping' }),
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('does not affect other routes', async () => {
+    const { id } = await createList(app, 'Shopping', 'correct-secret')
+    const res = await app.request(`/api/lists/${id}`)
+    expect(res.status).toBe(200)
   })
 })
 
@@ -206,9 +250,7 @@ describe('DELETE /api/lists/:id/items/:itemId', () => {
   it('deletes an item and returns 204', async () => {
     const { id } = await createList(app)
     const item = await addItem(app, id)
-    const res = await app.request(`/api/lists/${id}/items/${item.id}`, {
-      method: 'DELETE',
-    })
+    const res = await app.request(`/api/lists/${id}/items/${item.id}`, { method: 'DELETE' })
     expect(res.status).toBe(204)
   })
 
