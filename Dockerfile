@@ -1,5 +1,5 @@
 # ── Build stage ──────────────────────────────────────────────────────────────
-FROM node:22-bookworm-slim AS build
+FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN npx tsc
 RUN npm prune --production
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
-FROM node:22-bookworm-slim AS runtime
+FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS runtime
 
 WORKDIR /app
 
