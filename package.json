@@ -1,0 +1,28 @@
+{
+  "name": "lijstje",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:server": "tsx watch src/server/server.ts",
+    "dev:client": "esbuild src/client/home.ts src/client/list.ts --bundle --outdir=client/js --target=chrome90,safari14 --watch",
+    "dev": "npm run dev:client & npm run dev:server",
+    "build:client": "esbuild src/client/home.ts src/client/list.ts --bundle --outdir=client/js --target=chrome90,safari14",
+    "check": "tsc --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "better-sqlite3": "^11.9.1",
+    "hono": "^4.7.5",
+    "morphdom": "^2.7.4"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.13.14",
+    "esbuild": "^0.25.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
+  }
+}
